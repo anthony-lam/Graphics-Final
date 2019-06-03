@@ -3,8 +3,8 @@
 Name: Anthony Lam
 
 Features: 
--Mesh
--Phong shading
--Light
--change behavior of vary
+- Mesh
+- Phong shading
+- Light
+- change behavior of vary
 
