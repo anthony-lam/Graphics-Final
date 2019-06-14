@@ -1,6 +1,6 @@
 import math
 from display import *
-
+from collections import defaultdict
 
   # IMPORANT NOTE
 
@@ -22,23 +22,28 @@ SPECULAR_EXP = 4
 
 #lighting functions
 def get_lighting(normal, view, ambient, light, symbols, reflect ):
-
     n = normal[:]
     normalize(n)
     normalize(light[LOCATION])
     normalize(view)
     r = symbols[reflect][1]
-
     a = calculate_ambient(ambient, r)
-    d = calculate_diffuse(light, r, n)
-    s = calculate_specular(light, r, view, n)
-
     i = [0, 0, 0]
-    i[RED] = int(a[RED] + d[RED] + s[RED])
-    i[GREEN] = int(a[GREEN] + d[GREEN] + s[GREEN])
-    i[BLUE] = int(a[BLUE] + d[BLUE] + s[BLUE])
-    limit_color(i)
-
+    i[RED] = a[RED]
+    i[GREEN] = a[GREEN]
+    i[BLUE] = a[BLUE]
+    l = 0
+    while l < len(light) -1:
+        current = []
+        current.append(light[l+LOCATION][:])
+        current.append(light[l+COLOR][:])
+        d = calculate_diffuse(current, r, n)
+        s = calculate_specular(current, r, view, n)
+        i[RED] +=  (d[RED] + s[RED])
+        i[GREEN] += (d[GREEN] + s[GREEN])
+        i[BLUE] += (d[BLUE] + s[BLUE])
+        l+=2
+    i = [int(x) for x in i]
     return i
 
 def calculate_ambient(alight, reflect):
@@ -114,5 +119,25 @@ def calculate_normal(polygons, i):
     N[0] = A[1] * B[2] - A[2] * B[1]
     N[1] = A[2] * B[0] - A[0] * B[2]
     N[2] = A[0] * B[1] - A[1] * B[0]
-
     return N
+
+def vertex_normal(polygons):
+    L = defaultdict(list)
+    i = 0
+    while i < len(polygons) - 2:
+        K = calculate_normal(polygons,i)
+        normalize(K)
+        L[tuple(polygons[i][0:3])].append(K)
+        L[tuple(polygons[i+1][0:3])].append(K)
+        L[tuple(polygons[i+2][0:3])].append(K)
+        i += 3
+
+    P = defaultdict(list)
+    for vertex in L:
+        length = len(L[vertex])
+        totalsum = [0,0,0]
+        for normal in L[vertex]:
+            totalsum = [totalsum[0] + normal[0], totalsum[1] + normal[1], totalsum[2] + normal[2] ]
+        P[vertex] = [totalsum[0]/length, totalsum[1]/length, totalsum[2]/length]
+        normalize(P[vertex])
+    return P

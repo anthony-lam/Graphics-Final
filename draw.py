@@ -399,3 +399,132 @@ def draw_line( x0, y0, z0, x1, y1, z1, screen, zbuffer, color ):
         z+= dz
         loop_start+= 1
     plot( screen, zbuffer, color, x, y, z )
+
+def scanline_convertG(polygons, i, screen, zbuffer, vertexnormals):
+    flip = False
+    BOT = 0
+    TOP = 2
+    MID = 1
+
+    points = [ (polygons[i][0], polygons[i][1], polygons[i][2]),
+               (polygons[i+1][0], polygons[i+1][1], polygons[i+1][2]),
+               (polygons[i+2][0], polygons[i+2][1], polygons[i+2][2]) ]
+
+        #this sorts points in increasing order
+    points.sort(key = lambda x: x[1])
+    x0 = points[BOT][0]
+    z0 = points[BOT][2]
+    x1 = points[BOT][0]
+    z1 = points[BOT][2]
+    y = int(points[BOT][1])
+
+    distance0 = int(points[TOP][1]) - y * 1.0 + 1
+    distance1 = int(points[MID][1]) - y * 1.0 + 1
+    distance2 = int(points[TOP][1]) - int(points[MID][1]) * 1.0 + 1
+
+    #distance to go up by
+    dx0 = (points[TOP][0] - points[BOT][0]) / distance0 if distance0 != 0 else 0
+    dz0 = (points[TOP][2] - points[BOT][2]) / distance0 if distance0 != 0 else 0
+    dx1 = (points[MID][0] - points[BOT][0]) / distance1 if distance1 != 0 else 0
+    dz1 = (points[MID][2] - points[BOT][2]) / distance1 if distance1 != 0 else 0
+
+    color0 = vertexnormals[points[BOT]]
+    color1 = vertexnormals[points[MID]]
+    color2 = vertexnormals[points[TOP]]
+
+    color0R, color0G, color0B = color0[0], color0[1],color0[2]
+    color1R, color1G, color1B = color1[0], color1[1],color1[2]
+    color2R, color2G, color2B = color2[0], color2[1],color2[2]
+
+    dcolor0r = (color2R - color0R) / distance0 if distance0 != 0 else 0
+    dcolor0g = (color2G - color0G) / distance0 if distance0 != 0 else 0
+    dcolor0b = (color2B - color0B) / distance0 if distance0 != 0 else 0
+
+    dcolor1r = (color1R - color0R) / distance1 if distance1 != 0 else 0
+    dcolor1g = (color1G - color0G) / distance1 if distance1 != 0 else 0
+    dcolor1b = (color1B - color0B) / distance1 if distance1 != 0 else 0
+
+    xcolor0R, xcolor0G, xcolor0B = color0[0], color0[1],color0[2]
+    xcolor1R, xcolor1G, xcolor1B = color0[0], color0[1],color0[2]
+
+    while y <= int(points[TOP][1]):
+        xcolor0 = [xcolor0R % 256, xcolor0G % 256, xcolor0B % 256]
+        xcolor1 = [xcolor1R % 256, xcolor1G % 256, xcolor1B % 256]
+        if ( not flip and y >= int(points[MID][1])):
+            flip = True
+            dx1 = (points[TOP][0] - points[MID][0]) / distance2 if distance2 != 0 else 0
+            dz1 = (points[TOP][2] - points[MID][2]) / distance2 if distance2 != 0 else 0
+            x1 = points[MID][0]
+            z1 = points[MID][2]
+            xcolor1R, xcolor1G, xcolor1B = color1R, color1G,color1B
+            dcolor1r = (color2R - color1R) / distance2 if distance2 != 0 else 0
+            dcolor1g = (color2G - color1G) / distance2 if distance2 != 0 else 0
+            dcolor1b = (color2B - color1B) / distance2 if distance2 != 0 else 0
+
+
+        #draw_line(int(x0), y, z0, int(x1), y, z1, screen, zbuffer, color)
+        draw_scanlineG(int(x0), z0, int(x1), z1, y, screen, zbuffer, xcolor0, xcolor1)
+        x0+= dx0
+        z0+= dz0
+        x1+= dx1
+        z1+= dz1
+        y+= 1
+        xcolor0R += dcolor0r
+        xcolor0G += dcolor0g
+        xcolor0B += dcolor0b
+
+        xcolor1R += dcolor1r
+        xcolor1G += dcolor1g
+        xcolor1B += dcolor1b
+
+def draw_scanlineG(x0, z0, x1, z1, y, screen, zbuffer, xcolor0, xcolor1):
+    #xo corresponds to xcolor0 bc increasing from bot to top
+    if x0 > x1:
+        tx = x0
+        tz = z0
+        x0 = x1
+        z0 = z1
+        x1 = tx
+        z1 = tz
+        temp = xcolor1[:]
+        xcolor1 = xcolor0[:]
+        xcolor0 = temp[:]
+
+
+    #generally start at 0 -> 1
+    x = x0
+    z = z0
+    #xcolor0 = [int(k) for k in xcolor0]
+    #xcolor1 = [int(i) for i in xcolor1]
+    delta_z = (z1 - z0) / (x1 - x0 + 1) if (x1 - x0 + 1) != 0 else 0
+    delta_r = (xcolor1[0] - xcolor0[0]) / (x1 - x0 + 1) if (x1 - x0 + 1) != 0 else 0
+    delta_g = (xcolor1[1] - xcolor0[1]) / (x1 - x0 + 1) if (x1 - x0 + 1) != 0 else 0
+    delta_b = (xcolor1[2] - xcolor0[2]) / (x1 - x0 + 1) if (x1 - x0 + 1) != 0 else 0
+
+
+
+    while x <= x1:
+        #print(int(x),int(y),int(z),xcolor1,xcolor0)
+        temp = [int(k) for k in xcolor0]
+        plot(screen, zbuffer, temp, int(x), int(y), int(z))
+        x+= 1
+        z+= delta_z
+        xcolor0[0] += delta_r
+        xcolor0[1] += delta_g
+        xcolor0[2] += delta_b
+def draw_polygonsG( polygons, screen, zbuffer, view, ambient, light, symbols, reflect):
+    if len(polygons) < 2:
+        print 'Need at least 3 points to draw'
+        return
+
+    vertexnormals = vertex_normal(polygons)
+    for k in vertexnormals:
+        vertexnormals[k] = get_lighting(vertexnormals[k], view, ambient, light, symbols, reflect )
+
+    point = 0
+    while point < len(polygons) - 2:
+        normal = calculate_normal(polygons, point)[:]
+        if normal[2] > 0:
+            scanline_convertG(polygons, point, screen, zbuffer, vertexnormals)
+
+        point+= 3

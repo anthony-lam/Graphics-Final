@@ -1,5 +1,9 @@
 push
+ambient 50 50 50
+light l2 0 1 0.1 200 200 0
+right top front
+box 100 200 -100 200
 move 250 250 0
 mesh :teapot
+box
 display
-save face.png
