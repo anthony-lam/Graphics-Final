@@ -2,9 +2,7 @@
 
 Name: Anthony Lam
 
-Features: 
+Features:
 - Mesh
-- Phong shading
+- Shading
 - Light
-- change behavior of vary
-
