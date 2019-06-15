@@ -4,5 +4,5 @@ Name: Anthony Lam
 
 Features:
 - Mesh
-- Shading
+- Gouraud Shading
 - Light
